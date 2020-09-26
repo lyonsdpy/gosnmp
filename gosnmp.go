@@ -46,6 +46,11 @@ func NewGoSNMP(target, community string, version SnmpVersion, timeout int64) (*G
 	return s, nil
 }
 
+func NewGoSNMP2(conn net.Conn, community string, version SnmpVersion, timeout int64) (*GoSNMP, error) {
+	s := &GoSNMP{conn.RemoteAddr().String(), community, version, time.Duration(timeout) * time.Second, conn, l.CreateLogger(false, false)}
+	return s, nil
+}
+
 // SetVerbose enables verbose logging
 func (x *GoSNMP) SetVerbose(v bool) {
 	x.Log.VerboseFlag = v
@@ -265,6 +270,13 @@ func (x *GoSNMP) Get(oid string) (*SnmpPacket, error) {
 // response or an error
 func (x *GoSNMP) GetMulti(oids []string) (*SnmpPacket, error) {
 	return x.request(GetRequest, oids...)
+}
+
+// Close SNMP UDP session
+func (x *GoSNMP) Close() {
+	if x.conn != nil {
+		_ = x.conn.Close()
+	}
 }
 
 func (x *GoSNMP) request(requestType Asn1BER, oids ...string) (*SnmpPacket, error) {
